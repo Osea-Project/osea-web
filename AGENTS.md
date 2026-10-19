@@ -71,7 +71,8 @@ Code says what, comments say why.
 
 ## Commits and pull requests
 
-- Match the history of the repository (`git log`): imperative, sentence case, short, for example `Add VM start endpoint`.
+- Use Conventional Commits: `type(scope): description`, with the scope optional. Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+- The description is imperative, lowercase, without a trailing period, for example `feat(vm): add start endpoint`. Mark breaking changes with `!` after the type or scope, or a `BREAKING CHANGE:` footer.
 - Messages contain only technical content: what, why, how to test. No essays for small changes.
 - Never add attribution of any kind: no `Co-Authored-By` trailer, no "generated with" line, no mention of an AI tool in commits, pull requests, issues, code, comments or docs. The author is the git user configured on the machine.
 - Never use `--no-verify`. The `commit-msg` hook rejects messages carrying AI attribution; if it rejects one, rewrite the message.
