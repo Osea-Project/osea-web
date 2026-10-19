@@ -1,7 +1,7 @@
 #!/bin/sh
 # Rejects commit messages that carry AI attribution.
 # $1 is the path of the file containing the commit message.
-PATTERN='co-authored-by:.*(claude|anthropic)|generated (with|by).*(claude|anthropic)|claude code|noreply@anthropic\.com'
+PATTERN='co-authored-by:.*(claude|anthropic|codex|openai|chatgpt|gpt|gemini|antigravity|copilot|cursor)|generated (with|by).*(claude|anthropic|codex|openai|chatgpt|gemini|antigravity|copilot|cursor)|claude code|noreply@(anthropic|openai)\.com'
 
 if grep -qiE "$PATTERN" "$1"; then
   echo "Commit rejected: remove AI attribution from the message." >&2
