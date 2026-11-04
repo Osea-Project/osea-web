@@ -1,9 +1,16 @@
 # osea-web
 
-Admin and client web interface for the Osea Project.
+Interface d’administration et client du projet Osea. Elle est construite avec React, Vite, TypeScript et Tailwind CSS et communiquera uniquement avec le serveur central Osea.
 
-Part of the [Osea Project](https://github.com/Osea-Project).
+## Démarrage
 
-## Status
+```sh
+bun install
+bun run dev
+```
 
-Early stage. See the organization profile for the architecture and the roadmap.
+Créer un build de production avec `bun run build`.
+
+## État
+
+L’inventaire actuel est un écran de démonstration avec des machines fictives. Les filtres et le démarrage simulé servent à explorer l’interface ; aucune donnée ni action n’est envoyée à un serveur ou à un hyperviseur. Le serveur central ne fournit pas encore d’API à l’interface. La connexion réelle sera ajoutée quand ses routes seront définies.
