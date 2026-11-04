@@ -7,9 +7,8 @@ import {
   ChevronDown,
   CircleHelp,
   Cloud,
-  Cpu,
   HardDrive,
-  LayoutDashboard,
+  Moon,
   MoreHorizontal,
   Play,
   Plus,
@@ -17,6 +16,7 @@ import {
   Server,
   ShieldCheck,
   SlidersHorizontal,
+  Sun,
   X,
 } from "lucide-react";
 import {
@@ -26,11 +26,12 @@ import {
 } from "./data/virtual-machines";
 
 type StatusFilter = "all" | VirtualMachineStatus;
+type Theme = "light" | "dark";
 
 const statusLabels: Record<VirtualMachineStatus, string> = {
-  running: "En cours",
+  running: "En marche",
   stopped: "Arrêtée",
-  unknown: "Indisponible",
+  unknown: "Inconnue",
 };
 
 function App() {
@@ -39,6 +40,7 @@ function App() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [notification, setNotification] = useState("");
   const [isDemoBannerVisible, setIsDemoBannerVisible] = useState(true);
+  const [theme, setTheme] = useState<Theme>("light");
 
   const visibleMachines = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -69,15 +71,19 @@ function App() {
     window.setTimeout(() => setNotification(""), 3500);
   }
 
-  function startMachine(machine: VirtualMachine) {
+  function changePowerState(machine: VirtualMachine) {
+    const newStatus = machine.status === "running" ? "stopped" : "running";
+
     setMachines((currentMachines) =>
       currentMachines.map((currentMachine) =>
         currentMachine.id === machine.id
-          ? { ...currentMachine, status: "running" }
+          ? { ...currentMachine, status: newStatus }
           : currentMachine,
       ),
     );
-    showNotification(`${machine.name} est démarrée (simulation).`);
+    showNotification(
+      `${machine.name} ${newStatus === "running" ? "démarrée" : "arrêtée"} (simulation).`,
+    );
   }
 
   function refreshInventory() {
@@ -90,130 +96,90 @@ function App() {
   }
 
   return (
-    <div className="app-shell">
-      <Sidebar machineCount={machines.length} />
-      <main className="main-content" id="inventory">
-        <Topbar
-          onHelp={() =>
-            showNotification("Le centre d’aide sera disponible prochainement.")
-          }
-        />
-        <div className="page-content">
-          {isDemoBannerVisible && (
-            <DemoBanner onClose={() => setIsDemoBannerVisible(false)} />
-          )}
-          <PageHeading
-            onCreate={() =>
+    <div className="app-shell" data-theme={theme}>
+      <header className="topbar">
+        <a className="brand" href="#inventory" aria-label="Osea, accueil">
+          <span className="brand-mark">
+            <Cloud size={20} strokeWidth={2.4} />
+          </span>
+          <span>
+            osea<span className="brand-period">.</span>
+          </span>
+        </a>
+
+        <nav className="navigation" aria-label="Navigation principale">
+          <a className="nav-item active" href="#inventory" aria-current="page">
+            <Server size={16} /> Machines
+          </a>
+        </nav>
+
+        <div className="topbar-actions">
+          <span className="connection-pill">
+            <span className="connection-indicator" /> Environnement local
+          </span>
+          <button
+            className="icon-button theme-button"
+            aria-label={`Activer le thème ${theme === "light" ? "sombre" : "clair"}`}
+            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+          >
+            {theme === "light" ? <Moon size={17} /> : <Sun size={17} />}
+          </button>
+          <button
+            className="icon-button help-button"
+            aria-label="Aide"
+            onClick={() =>
               showNotification(
-                "La création de VM sera disponible avec l’API du serveur Osea.",
+                "Le centre d’aide sera disponible prochainement.",
               )
             }
-          />
-          <SummaryGrid
-            total={machines.length}
-            running={runningCount}
-            stopped={stoppedCount}
-            unavailable={unavailableCount}
-          />
-          <InventoryCard
-            machines={machines}
-            visibleMachines={visibleMachines}
-            search={search}
-            statusFilter={statusFilter}
-            onSearchChange={setSearch}
-            onStatusFilterChange={setStatusFilter}
-            onRefresh={refreshInventory}
-            onSort={() => setMachines((current) => [...current].reverse())}
-            onStart={startMachine}
-            onInfo={showNotification}
-            onClearFilters={clearFilters}
-          />
-          <PageFooter />
+          >
+            <CircleHelp size={17} />
+          </button>
+          <div className="topbar-avatar" aria-label="Profil de démonstration">
+            O
+          </div>
         </div>
+      </header>
+
+      <main className="page-content" id="inventory">
+        {isDemoBannerVisible && (
+          <DemoBanner onClose={() => setIsDemoBannerVisible(false)} />
+        )}
+        <PageHeading
+          runningCount={runningCount}
+          totalCount={machines.length}
+          onCreate={() =>
+            showNotification(
+              "La création de VM sera disponible avec l’API du serveur Osea.",
+            )
+          }
+        />
+        <SummaryGrid
+          total={machines.length}
+          running={runningCount}
+          stopped={stoppedCount}
+          unavailable={unavailableCount}
+        />
+        <InventoryCard
+          machines={machines}
+          visibleMachines={visibleMachines}
+          search={search}
+          statusFilter={statusFilter}
+          onSearchChange={setSearch}
+          onStatusFilterChange={setStatusFilter}
+          onRefresh={refreshInventory}
+          onSort={() => setMachines((current) => [...current].reverse())}
+          onChangePowerState={changePowerState}
+          onInfo={showNotification}
+          onClearFilters={clearFilters}
+        />
+        <PageFooter />
       </main>
+
       {notification && (
         <Toast message={notification} onClose={() => setNotification("")} />
       )}
     </div>
-  );
-}
-
-function Sidebar({ machineCount }: { machineCount: number }) {
-  return (
-    <aside className="sidebar">
-      <a className="brand" href="#inventory" aria-label="Osea, accueil">
-        <span className="brand-mark">
-          <Cloud size={21} strokeWidth={2.4} />
-        </span>
-        <span>
-          osea<span className="brand-period">.</span>
-        </span>
-      </a>
-
-      <div className="workspace-switcher">
-        <span className="workspace-icon">
-          <LayoutDashboard size={17} />
-        </span>
-        <span className="workspace-name">
-          <strong>Espace équipe</strong>
-          <small>Infrastructure</small>
-        </span>
-        <ChevronDown size={15} className="muted-icon" />
-      </div>
-
-      <div className="sidebar-label">ESPACE DE TRAVAIL</div>
-      <nav className="navigation" aria-label="Navigation principale">
-        <a className="nav-item" href="#summary">
-          <LayoutDashboard size={17} /> Vue d’ensemble
-        </a>
-        <a className="nav-item active" href="#inventory">
-          <Server size={17} /> Machines virtuelles
-          <span className="nav-count">{machineCount}</span>
-        </a>
-      </nav>
-
-      <div className="sidebar-label infrastructure-label">INFRASTRUCTURE</div>
-      <div className="connection-card">
-        <span className="connection-indicator" />
-        <div>
-          <strong>Environnement de test</strong>
-          <small>Mode démonstration</small>
-        </div>
-        <MoreHorizontal size={17} className="muted-icon" />
-      </div>
-
-      <div className="sidebar-bottom">
-        <div className="profile-card">
-          <div className="avatar">AD</div>
-          <div className="profile-name">
-            <strong>Administrateur</strong>
-            <small>Compte de démonstration</small>
-          </div>
-          <MoreHorizontal size={17} className="muted-icon" />
-        </div>
-      </div>
-    </aside>
-  );
-}
-
-function Topbar({ onHelp }: { onHelp: () => void }) {
-  return (
-    <header className="topbar">
-      <div className="breadcrumbs">
-        <span>Infrastructure</span>
-        <span className="breadcrumb-slash">/</span>
-        <strong>Machines virtuelles</strong>
-      </div>
-      <div className="topbar-actions">
-        <span className="environment-pill">
-          <span className="connection-indicator" /> Démonstration
-        </span>
-        <button className="icon-button" aria-label="Aide" onClick={onHelp}>
-          <CircleHelp size={18} />
-        </button>
-        <div className="topbar-avatar">AD</div>
-      </div>
-    </header>
   );
 }
 
@@ -226,8 +192,7 @@ function DemoBanner({ onClose }: { onClose: () => void }) {
       <p>
         <strong>Mode démonstration</strong>
         <span>
-          Ces machines sont des exemples ; aucune action ne touche un
-          hyperviseur.
+          Données fictives ; les actions ne démarrent ni n’arrêtent de vraie VM.
         </span>
       </p>
       <button
@@ -241,18 +206,28 @@ function DemoBanner({ onClose }: { onClose: () => void }) {
   );
 }
 
-function PageHeading({ onCreate }: { onCreate: () => void }) {
+function PageHeading({
+  runningCount,
+  totalCount,
+  onCreate,
+}: {
+  runningCount: number;
+  totalCount: number;
+  onCreate: () => void;
+}) {
   return (
     <section className="page-heading">
       <div>
         <div className="eyebrow">
-          <span className="eyebrow-dot" /> VOTRE INFRASTRUCTURE
+          <span className="eyebrow-dot" /> INFRASTRUCTURE
         </div>
         <h1>Machines virtuelles</h1>
-        <p>Consultez et gérez les machines de votre environnement.</p>
+        <p>
+          {totalCount} machines · {runningCount} en marche
+        </p>
       </div>
       <button className="primary-button" onClick={onCreate}>
-        <Plus size={17} /> Nouvelle machine
+        <Plus size={16} /> Nouvelle machine
       </button>
     </section>
   );
@@ -270,37 +245,33 @@ function SummaryGrid({
   unavailable: number;
 }) {
   return (
-    <section
-      className="summary-grid"
-      id="summary"
-      aria-label="Résumé de l’inventaire"
-    >
+    <section className="summary-grid" aria-label="Résumé de l’inventaire">
       <SummaryCard
-        label="Machines au total"
+        label="Machines"
         value={total}
         caption="dans cet environnement"
-        icon={<Server size={18} />}
-        tone="blue"
+        icon={<Server size={17} />}
+        tone="green"
       />
       <SummaryCard
-        label="En cours d’exécution"
+        label="En marche"
         value={running}
-        caption="prêtes à l’emploi"
-        icon={<Activity size={18} />}
-        tone="green"
+        caption="état actuel"
+        icon={<Activity size={17} />}
+        tone="blue"
       />
       <SummaryCard
         label="Arrêtées"
         value={stopped}
-        caption="peuvent être démarrées"
-        icon={<HardDrive size={18} />}
+        caption="peuvent démarrer"
+        icon={<HardDrive size={17} />}
         tone="amber"
       />
       <SummaryCard
-        label="Indisponibles"
+        label="Inconnues"
         value={unavailable}
         caption="état à vérifier"
-        icon={<Cpu size={18} />}
+        icon={<CircleHelp size={17} />}
         tone="slate"
       />
     </section>
@@ -341,7 +312,7 @@ function InventoryCard({
   onStatusFilterChange,
   onRefresh,
   onSort,
-  onStart,
+  onChangePowerState,
   onInfo,
   onClearFilters,
 }: {
@@ -353,7 +324,7 @@ function InventoryCard({
   onStatusFilterChange: (status: StatusFilter) => void;
   onRefresh: () => void;
   onSort: () => void;
-  onStart: (machine: VirtualMachine) => void;
+  onChangePowerState: (machine: VirtualMachine) => void;
   onInfo: (message: string) => void;
   onClearFilters: () => void;
 }) {
@@ -362,10 +333,10 @@ function InventoryCard({
       <div className="inventory-header">
         <div>
           <h2 id="inventory-heading">Inventaire</h2>
-          <p>Les machines accessibles depuis votre environnement.</p>
+          <p>Utilisation des ressources et état des machines.</p>
         </div>
-        <button className="secondary-button refresh-button" onClick={onRefresh}>
-          <ArrowDownUp size={15} /> Actualiser
+        <button className="secondary-button" onClick={onRefresh}>
+          <ArrowDownUp size={14} /> Actualiser
         </button>
       </div>
       <InventoryToolbar
@@ -378,7 +349,7 @@ function InventoryCard({
       <MachineTable
         visibleMachines={visibleMachines}
         totalCount={machines.length}
-        onStart={onStart}
+        onChangePowerState={onChangePowerState}
         onInfo={onInfo}
         onClearFilters={onClearFilters}
       />
@@ -402,18 +373,17 @@ function InventoryToolbar({
   return (
     <div className="toolbar">
       <label className="search-field">
-        <Search size={17} />
+        <Search size={16} />
         <input
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
-          placeholder="Rechercher une machine..."
-          aria-label="Rechercher une machine"
+          placeholder="Filtrer les machines"
+          aria-label="Filtrer les machines"
         />
-        <kbd>/</kbd>
       </label>
       <div className="toolbar-actions">
         <label className="filter-select">
-          <SlidersHorizontal size={15} />
+          <SlidersHorizontal size={14} />
           <select
             value={statusFilter}
             onChange={(event) =>
@@ -422,14 +392,14 @@ function InventoryToolbar({
             aria-label="Filtrer par état"
           >
             <option value="all">Tous les états</option>
-            <option value="running">En cours</option>
+            <option value="running">En marche</option>
             <option value="stopped">Arrêtées</option>
-            <option value="unknown">Indisponibles</option>
+            <option value="unknown">Inconnues</option>
           </select>
-          <ChevronDown size={14} />
+          <ChevronDown size={13} />
         </label>
         <button className="secondary-button sort-button" onClick={onSort}>
-          <ArrowDownUp size={15} /> Trier
+          <ArrowDownUp size={14} /> Trier
         </button>
       </div>
     </div>
@@ -439,13 +409,13 @@ function InventoryToolbar({
 function MachineTable({
   visibleMachines,
   totalCount,
-  onStart,
+  onChangePowerState,
   onInfo,
   onClearFilters,
 }: {
   visibleMachines: VirtualMachine[];
   totalCount: number;
-  onStart: (machine: VirtualMachine) => void;
+  onChangePowerState: (machine: VirtualMachine) => void;
   onInfo: (message: string) => void;
   onClearFilters: () => void;
 }) {
@@ -455,19 +425,15 @@ function MachineTable({
         <table>
           <thead>
             <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  aria-label="Sélectionner toutes les machines"
-                />
+              <th scope="col">Machine</th>
+              <th scope="col">Ressources</th>
+              <th scope="col">CPU</th>
+              <th scope="col">RAM</th>
+              <th scope="col">Disque</th>
+              <th scope="col">État</th>
+              <th scope="col" className="actions-heading">
+                Actions
               </th>
-              <th>
-                Nom <span className="table-sort">↕</span>
-              </th>
-              <th>Identifiant</th>
-              <th>État</th>
-              <th>Type</th>
-              <th className="actions-heading">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -475,7 +441,7 @@ function MachineTable({
               <MachineRow
                 key={machine.id}
                 machine={machine}
-                onStart={onStart}
+                onChangePowerState={onChangePowerState}
                 onInfo={onInfo}
               />
             ))}
@@ -508,55 +474,75 @@ function MachineTable({
 
 function MachineRow({
   machine,
-  onStart,
+  onChangePowerState,
   onInfo,
 }: {
   machine: VirtualMachine;
-  onStart: (machine: VirtualMachine) => void;
+  onChangePowerState: (machine: VirtualMachine) => void;
   onInfo: (message: string) => void;
 }) {
+  const canReadMetrics = machine.status === "running";
+
   return (
     <tr>
-      <td>
-        <input type="checkbox" aria-label={`Sélectionner ${machine.name}`} />
-      </td>
       <td>
         <div className="machine-name">
           <span className={`machine-icon ${machine.status}`}>
             <Server size={16} />
           </span>
-          <strong>{machine.name}</strong>
+          <span>
+            <strong>{machine.name}</strong>
+            <small>{machine.id}</small>
+          </span>
         </div>
       </td>
       <td>
-        <span className="machine-id">{machine.id}</span>
-      </td>
-      <td>
-        <span className={`status-badge ${machine.status}`}>
-          <span />
-          {statusLabels[machine.status]}
+        <span className="machine-resources">
+          {machine.cpuCores} vCPU <span>·</span> {machine.memoryGiB} Go{" "}
+          <span>·</span> {machine.diskGiB} Go
         </span>
       </td>
       <td>
-        <span className="machine-type">Machine virtuelle</span>
+        <ResourceMeter
+          label="CPU"
+          value={canReadMetrics ? machine.cpuUsagePercent : null}
+        />
+      </td>
+      <td>
+        <ResourceMeter
+          label="RAM"
+          value={canReadMetrics ? machine.memoryUsagePercent : null}
+        />
+      </td>
+      <td>
+        <ResourceMeter
+          label="Disque"
+          value={canReadMetrics ? machine.diskUsagePercent : null}
+        />
+      </td>
+      <td>
+        <StatusBadge status={machine.status} />
       </td>
       <td>
         <div className="row-actions">
-          {machine.status === "stopped" ? (
-            <button className="start-button" onClick={() => onStart(machine)}>
-              <Play size={13} fill="currentColor" /> Démarrer
-            </button>
-          ) : (
+          {machine.status === "unknown" ? (
             <button
               className="row-arrow"
               aria-label={`Détails de ${machine.name}`}
               onClick={() =>
-                onInfo(
-                  `Les détails de ${machine.name} seront disponibles avec l’API du serveur Osea.`,
-                )
+                onInfo("Les métriques réelles attendent l’API centrale Osea.")
               }
             >
-              <ArrowRight size={16} />
+              <ArrowRight size={15} />
+            </button>
+          ) : (
+            <button
+              className={`power-button ${machine.status}`}
+              onClick={() => onChangePowerState(machine)}
+              aria-label={`${machine.status === "running" ? "Arrêter" : "Démarrer"} ${machine.name}`}
+            >
+              <Play size={13} fill="currentColor" />
+              {machine.status === "running" ? "Arrêter" : "Démarrer"}
             </button>
           )}
           <button
@@ -564,11 +550,11 @@ function MachineRow({
             aria-label={`Autres actions pour ${machine.name}`}
             onClick={() =>
               onInfo(
-                `Les actions pour ${machine.name} seront disponibles avec l’API du serveur Osea.`,
+                "Les actions seront disponibles avec l’API du serveur Osea.",
               )
             }
           >
-            <MoreHorizontal size={17} />
+            <MoreHorizontal size={16} />
           </button>
         </div>
       </td>
@@ -576,12 +562,57 @@ function MachineRow({
   );
 }
 
+function ResourceMeter({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | null;
+}) {
+  if (value === null) {
+    return (
+      <span className="metric-unavailable" aria-label={`${label} indisponible`}>
+        —
+      </span>
+    );
+  }
+
+  const tone = value >= 80 ? "high" : value >= 60 ? "medium" : "normal";
+
+  return (
+    <div
+      className="resource-meter"
+      role="meter"
+      aria-label={`${label} utilisé`}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={value}
+    >
+      <span className="resource-track">
+        <span
+          className={`resource-fill ${tone}`}
+          style={{ width: `${value}%` }}
+        />
+      </span>
+      <span className="resource-value">{value} %</span>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: VirtualMachineStatus }) {
+  return (
+    <span className={`status-badge ${status}`}>
+      <span /> {statusLabels[status]}
+    </span>
+  );
+}
+
 function EmptyState({ onClearFilters }: { onClearFilters: () => void }) {
   return (
     <div className="empty-state">
-      <Search size={21} />
+      <Search size={20} />
       <strong>Aucune machine trouvée</strong>
-      <span>Essayez un autre nom ou modifiez les filtres.</span>
+      <span>Essaie un autre nom ou modifie les filtres.</span>
       <button className="text-button" onClick={onClearFilters}>
         Effacer les filtres
       </button>
@@ -593,11 +624,9 @@ function PageFooter() {
   return (
     <footer className="page-footer">
       <span>
-        <span className="footer-status-dot" /> Mode démonstration actif
+        <span className="footer-status-dot" /> Interface locale
       </span>
-      <span>
-        Inventaire fictif <span className="footer-divider">·</span> Osea v0.1
-      </span>
+      <span>Données de démonstration · Osea v0.1</span>
     </footer>
   );
 }
@@ -610,7 +639,7 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
       </span>
       {message}
       <button aria-label="Fermer" onClick={onClose}>
-        <X size={15} />
+        <X size={14} />
       </button>
     </div>
   );

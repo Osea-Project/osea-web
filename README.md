@@ -13,4 +13,6 @@ Créer un build de production avec `bun run build`.
 
 ## État
 
-L’inventaire actuel est un écran de démonstration avec des machines fictives. Les filtres et le démarrage simulé servent à explorer l’interface ; aucune donnée ni action n’est envoyée à un serveur ou à un hyperviseur. Le serveur central ne fournit pas encore d’API à l’interface. La connexion réelle sera ajoutée quand ses routes seront définies.
+L’inventaire actuel est un écran de démonstration avec des machines et des métriques fictives. La recherche, les filtres, le thème clair/sombre et les commandes de démarrage/arrêt servent à explorer l’interface ; aucune donnée ni action n’est envoyée à un serveur ou à un hyperviseur.
+
+Les métriques et actions de Sprout ne sont pas branchées ici : son serveur pilote Proxmox directement, alors que l’interface Osea doit passer par le serveur central. L’API centrale ne fournit pas encore de routes pour les métriques CPU/RAM/disque ou les actions de démarrage/arrêt. La connexion réelle attend que ces routes et leurs types soient définis dans le contrat partagé.
