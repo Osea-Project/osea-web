@@ -65,6 +65,9 @@ function App() {
   const unavailableCount = machines.filter(
     (machine) => machine.status === "unknown",
   ).length;
+  const runningMachines = machines.filter(
+    (machine) => machine.status === "running",
+  );
 
   function showNotification(message: string) {
     setNotification(message);
@@ -160,19 +163,22 @@ function App() {
           stopped={stoppedCount}
           unavailable={unavailableCount}
         />
-        <InventoryCard
-          machines={machines}
-          visibleMachines={visibleMachines}
-          search={search}
-          statusFilter={statusFilter}
-          onSearchChange={setSearch}
-          onStatusFilterChange={setStatusFilter}
-          onRefresh={refreshInventory}
-          onSort={() => setMachines((current) => [...current].reverse())}
-          onChangePowerState={changePowerState}
-          onInfo={showNotification}
-          onClearFilters={clearFilters}
-        />
+        <div className="dashboard-grid">
+          <InventoryCard
+            machines={machines}
+            visibleMachines={visibleMachines}
+            search={search}
+            statusFilter={statusFilter}
+            onSearchChange={setSearch}
+            onStatusFilterChange={setStatusFilter}
+            onRefresh={refreshInventory}
+            onSort={() => setMachines((current) => [...current].reverse())}
+            onChangePowerState={changePowerState}
+            onInfo={showNotification}
+            onClearFilters={clearFilters}
+          />
+          <UsageOverview machines={runningMachines} />
+        </div>
         <PageFooter />
       </main>
 
@@ -354,6 +360,83 @@ function InventoryCard({
         onClearFilters={onClearFilters}
       />
     </section>
+  );
+}
+
+function UsageOverview({ machines }: { machines: VirtualMachine[] }) {
+  const metrics = [
+    { label: "CPU", value: getAverageUsage(machines, "cpuUsagePercent") },
+    { label: "RAM", value: getAverageUsage(machines, "memoryUsagePercent") },
+    { label: "Disque", value: getAverageUsage(machines, "diskUsagePercent") },
+  ];
+
+  return (
+    <aside className="usage-overview">
+      <div className="usage-overview-header">
+        <div>
+          <h2>Ressources</h2>
+          <p>Moyenne des machines actives</p>
+        </div>
+        <span className="live-pill">
+          <span /> Démo
+        </span>
+      </div>
+      <div
+        className="usage-ring"
+        style={{
+          background: `conic-gradient(var(--accent) ${metrics[0].value}%, var(--surface-hover) 0)`,
+        }}
+      >
+        <div>
+          <strong>{metrics[0].value}%</strong>
+          <span>CPU moyen</span>
+        </div>
+      </div>
+      <div className="usage-metrics">
+        {metrics.slice(1).map((metric) => (
+          <ResourceSummary
+            key={metric.label}
+            label={metric.label}
+            value={metric.value}
+          />
+        ))}
+      </div>
+      <div className="usage-caption">
+        <span>{machines.length} machines actives</span>
+        <span>Données fictives</span>
+      </div>
+    </aside>
+  );
+}
+
+function getAverageUsage(
+  machines: VirtualMachine[],
+  key: "cpuUsagePercent" | "memoryUsagePercent" | "diskUsagePercent",
+) {
+  const values = machines
+    .map((machine) => machine[key])
+    .filter((value): value is number => value !== null);
+
+  if (values.length === 0) {
+    return 0;
+  }
+
+  return Math.round(
+    values.reduce((total, value) => total + value, 0) / values.length,
+  );
+}
+
+function ResourceSummary({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="resource-summary">
+      <div className="resource-summary-label">
+        <span>{label}</span>
+        <strong>{value}%</strong>
+      </div>
+      <span className="summary-track">
+        <span style={{ width: `${value}%` }} />
+      </span>
+    </div>
   );
 }
 
